@@ -13,17 +13,15 @@ int main()
   printf("Type the comand line: ");
   char input_line[999];
   fgets(input_line, 999, stdin);
-  printf("\n");
-  fflush(stdout);
+
+  char *p;
+  if ((p = strchr(input_line, '\n')) != NULL) *p = '\0';
 
   int ppid = getppid();
   kill(ppid, SIGUSR1);
 
   // 2 канала, которые попеременно будут менять друг друга сменять для связи
-  int fd1[2] = {-1, -1}, fd2[2];
-  close(fd1[0]);
-  close(fd1[1]);
-  // pipe(fd1);
+  int fd1[2], fd2[2];
 
   int cmdCounter = countCmds(input_line);
 
@@ -43,7 +41,7 @@ int main()
     if (!pid)
     {
       // работа с каналом связи пред.
-      close(fd1[1]);
+      if (i) close(fd1[1]);
       if (i) dup2(fd1[0], STDIN_FILENO);
       
       //работа с каналом связи след.
@@ -68,7 +66,7 @@ int main()
       execvp(argv[0], argv);
     }
     // родительский процесс
-    close(fd1[0]);
+    if (i) close(fd1[0]);
     close(fd2[1]);
 
     wait(NULL);
